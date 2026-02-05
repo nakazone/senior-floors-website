@@ -9,11 +9,15 @@ import { CTA } from '@/components/ui/CTA'
 import { MapPin, ArrowLeft } from 'lucide-react'
 
 export async function generateStaticParams() {
-  const cities = await prisma.city.findMany({
-    where: { published: true },
-    select: { slug: true },
-  })
-  return cities.map((city) => ({ slug: city.slug }))
+  try {
+    const cities = await prisma.city.findMany({
+      where: { published: true },
+      select: { slug: true },
+    })
+    return cities.map((city) => ({ slug: city.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({

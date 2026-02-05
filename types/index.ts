@@ -4,18 +4,17 @@ export interface Service {
   slug: string
   description: string
   shortDescription: string
-  icon: string
-  keywords: string[]
-  benefits: string[]
-  process: Array<{
-    step: number
-    title: string
-    description: string
-  }>
-  faqs: Array<{
-    question: string
-    answer: string
-  }>
+  icon?: string | null
+  keywords?: string | string[] | null
+  benefits?: string | string[] | null
+  process?: string | Array<{ step: number; title: string; description: string }> | null
+  faqs?: string | Array<{ question: string; answer: string }> | null
+  metaTitle?: string | null
+  metaDescription?: string | null
+  published?: boolean | null
+  featured?: boolean | null
+  enableFAQSchema?: boolean | null
+  enableServiceSchema?: boolean | null
 }
 
 export interface City {

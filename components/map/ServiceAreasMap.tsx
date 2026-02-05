@@ -24,9 +24,9 @@ type ServiceAreasMapProps = {
 
 // Fix default marker icon in Next.js (Leaflet uses file paths that break with bundling)
 function fixLeafletIcon() {
-  const DefaultIcon = L.Icon.Default as L.Icon & { _getIconUrl?: string }
+  const DefaultIcon = L.Icon.Default as unknown as { prototype?: { _getIconUrl?: string } }
   if (typeof DefaultIcon !== 'undefined' && DefaultIcon.prototype) {
-    delete (DefaultIcon.prototype as unknown as { _getIconUrl?: string })._getIconUrl
+    delete DefaultIcon.prototype._getIconUrl
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',

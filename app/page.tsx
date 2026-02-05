@@ -20,6 +20,7 @@ export default function HomePage() {
     name: '[Company Name]',
     telephone: '+1-XXX-XXX-XXXX',
     address: {
+      '@type': 'PostalAddress',
       addressLocality: '[City]',
       addressRegion: '[State]',
       postalCode: '[ZIP]',

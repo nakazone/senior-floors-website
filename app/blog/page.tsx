@@ -9,12 +9,19 @@ export const metadata: Metadata = generateSEOMetadata({
   keywords: ['flooring blog', 'flooring tips', 'flooring guide', 'flooring maintenance'],
 })
 
+export const dynamic = 'force-dynamic'
+
 export default async function BlogPage() {
-  const posts = await prisma.blogPost.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: 'desc' },
-    take: 20,
-  })
+  let posts: Awaited<ReturnType<typeof prisma.blogPost.findMany>>
+  try {
+    posts = await prisma.blogPost.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: 'desc' },
+      take: 20,
+    })
+  } catch {
+    posts = []
+  }
 
   return (
     <div className="bg-white">
@@ -41,11 +48,13 @@ export default async function BlogPage() {
                   className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group"
                 >
                   {post.featuredImage && (
-                    <div className="aspect-video bg-gray-200 overflow-hidden">
-                      <img
+                    <div className="aspect-video bg-gray-200 overflow-hidden relative">
+                      <Image
                         src={post.featuredImage}
                         alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                     </div>
                   )}

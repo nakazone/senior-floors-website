@@ -1,13 +1,18 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+type BlogPostWithAuthor = Prisma.BlogPostGetPayload<{
+  include: { author: { select: { name: true; email: true } } }
+}>
+
 export default async function BlogPage() {
   const session = await getServerSession(authOptions)
-  
-  const posts = await prisma.blogPost.findMany({
+
+  const posts: BlogPostWithAuthor[] = await prisma.blogPost.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
       author: {
@@ -41,7 +46,7 @@ export default async function BlogPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {posts.map((post) => (
+            {posts.map((post: BlogPostWithAuthor) => (
               <tr key={post.id}>
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-text-dark">{post.title}</div>

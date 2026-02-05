@@ -11,11 +11,15 @@ import { EstimateForm } from '@/components/forms/EstimateForm'
 import { CheckCircle, Clock, Shield } from 'lucide-react'
 
 export async function generateStaticParams() {
-  const services = await prisma.service.findMany({
-    where: { published: true },
-    select: { slug: true },
-  })
-  return services.map((service) => ({ slug: service.slug }))
+  try {
+    const services = await prisma.service.findMany({
+      where: { published: true },
+      select: { slug: true },
+    })
+    return services.map((service) => ({ slug: service.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -30,7 +34,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return generateSEOMetadata({
     title: service.metaTitle || service.name,
     description: service.metaDescription || service.description,
-    keywords: service.keywords || undefined,
+    keywords: service.keywords ? service.keywords.split(',').map((k) => k.trim()) : undefined,
     canonical: `/services/${service.slug}`,
   })
 }

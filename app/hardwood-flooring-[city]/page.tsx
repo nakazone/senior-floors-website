@@ -39,7 +39,10 @@ export default function HardwoodCityPage({ params }: { params: { city: string } 
   }
 
   const serviceSchema = generateServiceSchema('Hardwood Flooring Installation', city.name)
-  const faqSchema = generateFAQSchema(service.faqs)
+  const faqs = typeof service.faqs === 'string' ? JSON.parse(service.faqs || '[]') : (service.faqs ?? [])
+  const faqSchema = generateFAQSchema(Array.isArray(faqs) ? faqs : [])
+  const benefitsList: string[] = Array.isArray(service.benefits) ? service.benefits : (typeof service.benefits === 'string' ? JSON.parse(service.benefits || '[]') : [])
+  const neighborhoodsList: string[] = city.neighborhoods ?? []
 
   return (
     <>
@@ -83,7 +86,7 @@ export default function HardwoodCityPage({ params }: { params: { city: string } 
                 Why Choose Hardwood Flooring?
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                {service.benefits.map((benefit, index) => (
+                {benefitsList.map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <CheckCircle className="h-6 w-6 text-primary-600 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">{benefit}</span>
@@ -98,7 +101,7 @@ export default function HardwoodCityPage({ params }: { params: { city: string } 
                 We provide hardwood flooring services throughout {city.name}, including:
               </p>
               <ul className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-8">
-                {city.neighborhoods.map((neighborhood) => (
+                {neighborhoodsList.map((neighborhood) => (
                   <li key={neighborhood} className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-primary-600" />
                     <span className="text-gray-700">{neighborhood}</span>

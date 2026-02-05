@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { generateMetadata as generateSEOMetadata } from '@/lib/seo'
+import { menuServices } from '@/data/menuServices'
 
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Flooring Services',
@@ -9,11 +10,20 @@ export const metadata: Metadata = generateSEOMetadata({
   keywords: ['flooring services', 'flooring installation', 'hardwood', 'vinyl', 'tile', 'epoxy'],
 })
 
+export const dynamic = 'force-dynamic'
+
 export default async function ServicesPage() {
-  const services = await prisma.service.findMany({
-    where: { published: true },
-    orderBy: { featured: 'desc' },
-  })
+  let services: { name: string; slug: string; shortDescription: string }[]
+  try {
+    const fromDb = await prisma.service.findMany({
+      where: { published: true },
+      orderBy: { featured: 'desc' },
+      select: { name: true, slug: true, shortDescription: true },
+    })
+    services = fromDb
+  } catch {
+    services = menuServices.map((s) => ({ name: s.name, slug: s.href.replace('/services/', ''), shortDescription: s.shortDescription }))
+  }
 
   return (
     <div className="bg-white">
@@ -33,7 +43,7 @@ export default async function ServicesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service) => (
               <Link
-                key={service.id}
+                key={service.slug}
                 href={`/services/${service.slug}`}
                 className="bg-white rounded-lg shadow-md p-8 hover:shadow-xl transition-all group border border-gray-200"
               >

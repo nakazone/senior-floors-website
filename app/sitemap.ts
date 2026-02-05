@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const now = new Date()
 
-  // High-priority static pages
+  // High-priority static pages (sempre incluídos)
   const staticEntries: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: now, changeFrequency: 'weekly', priority: 1 },
     { url: `${baseUrl}/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.95 },
@@ -26,18 +26,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/policies`, lastModified: now, changeFrequency: 'yearly', priority: 0.6 },
   ]
 
-  // Services (from DB)
-  const services = await prisma.service.findMany({
-    where: { published: true },
-    select: { slug: true, updatedAt: true },
-  })
-  const serviceEntries: MetadataRoute.Sitemap = services.map((s) => ({
-    url: `${baseUrl}/services/${s.slug}`,
-    lastModified: s.updatedAt,
-    changeFrequency: 'monthly' as const,
-    priority: 0.9,
-  }))
-
   // Flooring types (static)
   const flooringEntries: MetadataRoute.Sitemap = FLOORING_SLUGS.map((slug) => ({
     url: `${baseUrl}/flooring/${slug}`,
@@ -46,47 +34,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }))
 
-  // Service areas (cities from DB)
-  const cities = await prisma.city.findMany({
-    where: { published: true },
-    select: { slug: true, updatedAt: true },
-  })
-  const cityEntries: MetadataRoute.Sitemap = cities.map((c) => ({
-    url: `${baseUrl}/service-areas/${c.slug}`,
-    lastModified: c.updatedAt,
-    changeFrequency: 'monthly' as const,
-    priority: 0.85,
-  }))
+  const out: MetadataRoute.Sitemap = [...staticEntries, ...flooringEntries]
 
-  // Location pages (flooring-installer-[city], etc.) from DB if any
-  const locationPages = await prisma.locationPage.findMany({
-    select: { slug: true, updatedAt: true },
-  })
-  const locationEntries: MetadataRoute.Sitemap = locationPages.map((p) => ({
-    url: `${baseUrl}/${p.slug}`,
-    lastModified: p.updatedAt,
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
-  }))
+  try {
+    const [services, cities, locationPages, blogPosts] = await Promise.all([
+      prisma.service.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+      prisma.city.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+      prisma.locationPage.findMany({ select: { slug: true, updatedAt: true } }),
+      prisma.blogPost.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }),
+    ])
+    const serviceEntries = services.map((s) => ({ url: `${baseUrl}/services/${s.slug}`, lastModified: s.updatedAt, changeFrequency: 'monthly' as const, priority: 0.9 }))
+    const cityEntries = cities.map((c) => ({ url: `${baseUrl}/service-areas/${c.slug}`, lastModified: c.updatedAt, changeFrequency: 'monthly' as const, priority: 0.85 }))
+    const locationEntries = locationPages.map((p) => ({ url: `${baseUrl}/${p.slug}`, lastModified: p.updatedAt, changeFrequency: 'monthly' as const, priority: 0.8 }))
+    const blogEntries = blogPosts.map((p) => ({ url: `${baseUrl}/blog/${p.slug}`, lastModified: p.updatedAt, changeFrequency: 'weekly' as const, priority: 0.7 }))
+    out.push(...serviceEntries, ...cityEntries, ...locationEntries, ...blogEntries)
+  } catch {
+    // Sem banco (ex.: build na Vercel sem DATABASE_URL): sitemap só com páginas estáticas
+  }
 
-  // Blog posts
-  const blogPosts = await prisma.blogPost.findMany({
-    where: { published: true },
-    select: { slug: true, updatedAt: true },
-  })
-  const blogEntries: MetadataRoute.Sitemap = blogPosts.map((p) => ({
-    url: `${baseUrl}/blog/${p.slug}`,
-    lastModified: p.updatedAt,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
-
-  return [
-    ...staticEntries,
-    ...serviceEntries,
-    ...flooringEntries,
-    ...cityEntries,
-    ...locationEntries,
-    ...blogEntries,
-  ]
+  return out
 }

@@ -215,7 +215,7 @@ export function CityForm({ city }: CityFormProps) {
               + Add Neighborhood
             </button>
           </div>
-          {formData.neighborhoods.map((neighborhood, index) => (
+          {formData.neighborhoods.map((neighborhood: string, index: number) => (
             <input
               key={index}
               type="text"

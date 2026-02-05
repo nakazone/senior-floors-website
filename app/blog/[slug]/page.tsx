@@ -5,11 +5,15 @@ import { CTA } from '@/components/ui/CTA'
 import { generateMetadata as generateSEOMetadata } from '@/lib/seo'
 
 export async function generateStaticParams() {
-  const posts = await prisma.blogPost.findMany({
-    where: { published: true },
-    select: { slug: true },
-  })
-  return posts.map((post) => ({ slug: post.slug }))
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: { published: true },
+      select: { slug: true },
+    })
+    return posts.map((post) => ({ slug: post.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -24,7 +28,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return generateSEOMetadata({
     title: post.metaTitle || post.title,
     description: post.metaDescription || post.excerpt,
-    keywords: post.keywords || undefined,
+    keywords: post.keywords ? post.keywords.split(',').map((k) => k.trim()) : undefined,
     canonical: `/blog/${post.slug}`,
   })
 }
@@ -81,11 +85,13 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       <article className="pb-16 lg:pb-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {post.featuredImage && (
-            <div className="mb-8">
-              <img
+            <div className="mb-8 relative w-full aspect-video rounded-lg overflow-hidden shadow-lg">
+              <Image
                 src={post.featuredImage}
                 alt={post.title}
-                className="w-full rounded-lg shadow-lg"
+                fill
+                className="object-cover"
+                sizes="(max-width: 896px) 100vw, 896px"
               />
             </div>
           )}

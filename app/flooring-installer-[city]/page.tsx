@@ -8,40 +8,50 @@ import { services } from '@/data/services'
 import Link from 'next/link'
 import { MapPin, Phone, CheckCircle } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateStaticParams() {
-  const cities = await prisma.city.findMany({
-    where: { published: true },
-    select: { slug: true },
-  })
-  return cities.map((city) => ({ city: city.slug }))
+  try {
+    const cities = await prisma.city.findMany({
+      where: { published: true },
+      select: { slug: true },
+    })
+    return cities.map((city) => ({ city: city.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }: { params: { city: string } }): Promise<Metadata> {
-  const city = await prisma.city.findUnique({
-    where: { slug: params.city },
-  })
-  
-  if (!city || !city.published) {
+  if (!params?.city) return {}
+  try {
+    const city = await prisma.city.findUnique({
+      where: { slug: params.city },
+    })
+    if (!city || !city.published) return {}
+    return generateSEOMetadata({
+      title: city.metaTitle || `Flooring Installer in ${city.name}, ${city.state}`,
+      description: city.metaDescription || `Professional flooring installation services in ${city.name}, ${city.state}. Hardwood, vinyl, tile, epoxy, and refinishing. Free estimates available.`,
+      keywords: city.keywords ? city.keywords.split(',').map((k) => k.trim()) : undefined,
+      city: city.name,
+      canonical: `/flooring-installer-${city.slug}`,
+    })
+  } catch {
     return {}
   }
-
-  return generateSEOMetadata({
-    title: city.metaTitle || `Flooring Installer in ${city.name}, ${city.state}`,
-    description: city.metaDescription || `Professional flooring installation services in ${city.name}, ${city.state}. Hardwood, vinyl, tile, epoxy, and refinishing. Free estimates available.`,
-    keywords: city.keywords || undefined,
-    city: city.name,
-    canonical: `/flooring-installer-${city.slug}`,
-  })
 }
 
 export default async function CityLandingPage({ params }: { params: { city: string } }) {
-  const city = await prisma.city.findUnique({
-    where: { slug: params.city },
-  })
-
-  if (!city || !city.published) {
+  if (!params?.city) notFound()
+  let city
+  try {
+    city = await prisma.city.findUnique({
+      where: { slug: params.city },
+    })
+  } catch {
     notFound()
   }
+  if (!city || !city.published) notFound()
 
   const neighborhoods = JSON.parse(city.neighborhoods || '[]')
   const publishedServices = await prisma.service.findMany({
@@ -53,9 +63,10 @@ export default async function CityLandingPage({ params }: { params: { city: stri
     name: '[Company Name]',
     telephone: '+1-XXX-XXX-XXXX',
     address: {
+      '@type': 'PostalAddress',
       addressLocality: city.name,
       addressRegion: city.state,
-      postalCode: city.zipCode || undefined,
+      postalCode: city.zipCode ?? '',
       addressCountry: 'US',
     },
     geo: city.latitude && city.longitude ? {

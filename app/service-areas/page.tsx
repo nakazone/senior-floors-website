@@ -1,9 +1,10 @@
 import { Metadata } from 'next'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { generateMetadata as generateSEOMetadata } from '@/lib/seo'
 import { cityCoordinates } from '@/data/cityCoordinates'
+import { cities as fallbackCities } from '@/data/cities'
 
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Service Areas',
@@ -11,8 +12,10 @@ export const metadata: Metadata = generateSEOMetadata({
   keywords: ['service areas', 'flooring service areas', 'flooring near me'],
 })
 
+export const dynamic = 'force-dynamic'
+
 // Map loads only on client (Leaflet uses window)
-const ServiceAreasMap = dynamic(
+const ServiceAreasMap = nextDynamic(
   () => import('@/components/map/ServiceAreasMap').then((mod) => mod.ServiceAreasMap),
   { ssr: false, loading: () => <div className="w-full aspect-video min-h-[400px] bg-bg-light rounded-xl animate-pulse flex items-center justify-center"><span className="text-text-light">Loading map...</span></div> }
 )
@@ -29,12 +32,26 @@ function groupCitiesByLetter(cities: { name: string; slug: string; state: string
     .map((letter) => ({ letter, cities: groups[letter] }))
 }
 
+type CityRow = { id: string; name: string; slug: string; state: string; latitude: number | null; longitude: number | null }
+
 export default async function ServiceAreasPage() {
-  const cities = await prisma.city.findMany({
-    where: { published: true },
-    orderBy: { name: 'asc' },
-    select: { id: true, name: true, slug: true, state: true, latitude: true, longitude: true },
-  })
+  let cities: CityRow[]
+  try {
+    cities = await prisma.city.findMany({
+      where: { published: true },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, slug: true, state: true, latitude: true, longitude: true },
+    })
+  } catch {
+    cities = fallbackCities.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      state: c.state,
+      latitude: c.coordinates?.lat ?? null,
+      longitude: c.coordinates?.lng ?? null,
+    }))
+  }
 
   const byLetter = groupCitiesByLetter(cities)
 
@@ -96,7 +113,7 @@ export default async function ServiceAreasPage() {
                         </div>
                         <ul className="space-y-1">
                           {letterCities.map((city) => (
-                            <li key={city.id}>
+                            <li key={city.slug}>
                               <Link
                                 href={`/service-areas/${city.slug}`}
                                 className="text-text-dark hover:text-primary transition-colors text-sm leading-relax"

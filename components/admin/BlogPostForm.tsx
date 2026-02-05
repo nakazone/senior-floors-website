@@ -215,7 +215,7 @@ export function BlogPostForm({ post }: BlogPostFormProps) {
               + Add Tag
             </button>
           </div>
-          {formData.tags.map((tag, index) => (
+          {formData.tags.map((tag: string, index: number) => (
             <input
               key={index}
               type="text"

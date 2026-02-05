@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { Service } from '@/types'
 
 interface ServiceFormProps {
   service?: Service
@@ -22,9 +23,9 @@ export function ServiceForm({ service }: ServiceFormProps) {
     featured: service?.featured ?? false,
     enableFAQSchema: service?.enableFAQSchema ?? true,
     enableServiceSchema: service?.enableServiceSchema ?? true,
-    benefits: service?.benefits ? JSON.parse(service.benefits) : [''],
-    process: service?.process ? JSON.parse(service.process) : [{ step: 1, title: '', description: '' }],
-    faqs: service?.faqs ? JSON.parse(service.faqs) : [{ question: '', answer: '' }],
+    benefits: service?.benefits ? (typeof service.benefits === 'string' ? JSON.parse(service.benefits) : service.benefits) : [''],
+    process: service?.process ? (typeof service.process === 'string' ? JSON.parse(service.process) : service.process) : [{ step: 1, title: '', description: '' }],
+    faqs: service?.faqs ? (typeof service.faqs === 'string' ? JSON.parse(service.faqs) : service.faqs) : [{ question: '', answer: '' }],
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,7 +177,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             + Add Benefit
           </button>
         </div>
-        {formData.benefits.map((benefit, index) => (
+        {formData.benefits.map((benefit: string, index: number) => (
           <div key={index}>
             <input
               type="text"
@@ -201,7 +202,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             + Add Step
           </button>
         </div>
-        {formData.process.map((step, index) => (
+        {formData.process.map((step: { step: number; title: string; description: string }, index: number) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4">
             <div className="mb-2">
               <label className="block text-sm font-medium text-text-dark mb-1">Step {step.step} Title</label>
@@ -241,7 +242,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             + Add FAQ
           </button>
         </div>
-        {formData.faqs.map((faq, index) => (
+        {formData.faqs.map((faq: { question: string; answer: string }, index: number) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4">
             <div className="mb-2">
               <label className="block text-sm font-medium text-text-dark mb-1">Question</label>
