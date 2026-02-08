@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { FileText, MapPin, MessageSquare, Users, TrendingUp } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboard() {
   const session = await getServerSession(authOptions)
 
@@ -12,21 +14,34 @@ export default async function AdminDashboard() {
     redirect('/admin/login')
   }
 
-  // Get statistics
-  const [servicesCount, citiesCount, blogPostsCount, leadsCount, recentLeads] = await Promise.all([
-    prisma.service.count(),
-    prisma.city.count(),
-    prisma.blogPost.count({ where: { published: true } }),
-    prisma.lead.count(),
-    prisma.lead.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-    }),
-  ])
-
-  const newLeadsCount = await prisma.lead.count({
-    where: { status: 'NEW' },
-  })
+  let servicesCount: number
+  let citiesCount: number
+  let blogPostsCount: number
+  let leadsCount: number
+  let recentLeads: Awaited<ReturnType<typeof prisma.lead.findMany>>
+  let newLeadsCount: number
+  try {
+    const [s, c, b, l, r] = await Promise.all([
+      prisma.service.count(),
+      prisma.city.count(),
+      prisma.blogPost.count({ where: { published: true } }),
+      prisma.lead.count(),
+      prisma.lead.findMany({ take: 5, orderBy: { createdAt: 'desc' } }),
+    ])
+    servicesCount = s
+    citiesCount = c
+    blogPostsCount = b
+    leadsCount = l
+    recentLeads = r
+    newLeadsCount = await prisma.lead.count({ where: { status: 'NEW' } })
+  } catch {
+    servicesCount = 0
+    citiesCount = 0
+    blogPostsCount = 0
+    leadsCount = 0
+    recentLeads = []
+    newLeadsCount = 0
+  }
 
   return (
     <div>

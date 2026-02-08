@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Download, Eye } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LeadsPage({
   searchParams,
 }: {
@@ -9,18 +11,24 @@ export default async function LeadsPage({
 }) {
   const status = searchParams.status as string | undefined
 
-  const leads = await prisma.lead.findMany({
-    where: status ? { status: status as any } : undefined,
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
-
-  const stats = {
-    new: await prisma.lead.count({ where: { status: 'NEW' } }),
-    contacted: await prisma.lead.count({ where: { status: 'CONTACTED' } }),
-    qualified: await prisma.lead.count({ where: { status: 'QUALIFIED' } }),
-    converted: await prisma.lead.count({ where: { status: 'CONVERTED' } }),
-    total: await prisma.lead.count(),
+  let leads: Awaited<ReturnType<typeof prisma.lead.findMany>>
+  let stats: { new: number; contacted: number; qualified: number; converted: number; total: number }
+  try {
+    leads = await prisma.lead.findMany({
+      where: status ? { status: status as 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    })
+    stats = {
+      new: await prisma.lead.count({ where: { status: 'NEW' } }),
+      contacted: await prisma.lead.count({ where: { status: 'CONTACTED' } }),
+      qualified: await prisma.lead.count({ where: { status: 'QUALIFIED' } }),
+      converted: await prisma.lead.count({ where: { status: 'CONVERTED' } }),
+      total: await prisma.lead.count(),
+    }
+  } catch {
+    leads = []
+    stats = { new: 0, contacted: 0, qualified: 0, converted: 0, total: 0 }
   }
 
   return (

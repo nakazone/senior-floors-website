@@ -2,10 +2,17 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CitiesPage() {
-  const cities = await prisma.city.findMany({
-    orderBy: { createdAt: 'desc' },
-  })
+  let cities: Awaited<ReturnType<typeof prisma.city.findMany>>
+  try {
+    cities = await prisma.city.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    cities = []
+  }
 
   return (
     <div>

@@ -9,17 +9,24 @@ type BlogPostWithAuthor = Prisma.BlogPostGetPayload<{
   include: { author: { select: { name: true; email: true } } }
 }>
 
+export const dynamic = 'force-dynamic'
+
 export default async function BlogPage() {
   const session = await getServerSession(authOptions)
 
-  const posts: BlogPostWithAuthor[] = await prisma.blogPost.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      author: {
-        select: { name: true, email: true },
+  let posts: BlogPostWithAuthor[]
+  try {
+    posts = await prisma.blogPost.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: { name: true, email: true },
+        },
       },
-    },
-  })
+    })
+  } catch {
+    posts = []
+  }
 
   return (
     <div>

@@ -2,10 +2,17 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { Plus, Edit, Trash2 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ServicesPage() {
-  const services = await prisma.service.findMany({
-    orderBy: { createdAt: 'desc' },
-  })
+  let services: Awaited<ReturnType<typeof prisma.service.findMany>>
+  try {
+    services = await prisma.service.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    services = []
+  }
 
   return (
     <div>
